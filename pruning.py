@@ -23,14 +23,17 @@ def alpha_beta_pruning(node, is_maximizing_player, alpha, beta):
     # Base case: If it's a leaf node, return its utility value.
     if not node.children:
         node.minimax_value = node.value
-        return node.value
+        return node.value,[node.name]
 
     if is_maximizing_player:
         best_value = -math.inf
+        best_path = []
         # Loop through each child to find the best move.
         for i, child in enumerate(node.children):
-            value = alpha_beta_pruning(child, False, alpha, beta)
-            best_value = max(best_value, value)
+            value,path= alpha_beta_pruning(child, False, alpha, beta)
+            if value > best_value:
+                best_value = value
+                best_path = [node.name] + path
             # Update alpha (the best score MAX can guarantee).
             alpha = max(alpha, best_value)
             
@@ -40,16 +43,20 @@ def alpha_beta_pruning(node, is_maximizing_player, alpha, beta):
                 # Prune the remaining children of this node.
                 for remaining_child in node.children[i+1:]:
                     remaining_child.is_pruned = True
+                    print(f"Pruned edge: {node.name} -> {remaining_child.name}")
                 break # Stop searching this branch.
         
         node.minimax_value = best_value
-        return best_value
+        return best_value,best_path
     else: # Minimizing player
         best_value = math.inf
+        best_path = []
         # Loop through each child to find the best move for MIN.
         for i, child in enumerate(node.children):
-            value = alpha_beta_pruning(child, True, alpha, beta)
-            best_value = min(best_value, value)
+            value,path = alpha_beta_pruning(child, True, alpha, beta)
+            if value < best_value:
+                best_value = value
+                best_path = [node.name] + path
             # Update beta (the best score MIN can guarantee).
             beta = min(beta, best_value)
 
@@ -59,10 +66,11 @@ def alpha_beta_pruning(node, is_maximizing_player, alpha, beta):
                 # Prune the remaining children of this node.
                 for remaining_child in node.children[i+1:]:
                     remaining_child.is_pruned = True
+                    print(f"Pruned edge: {node.name} -> {remaining_child.name}")
                 break # Stop searching this branch.
         
         node.minimax_value = best_value
-        return best_value
+        return best_value,best_path
 
 # --- Interactive Tree Builder (Same as before) ---
 def build_tree_interactively():
@@ -139,8 +147,9 @@ if __name__ == "__main__":
     if root:
         print("\n--- Running Minimax with Alpha-Beta Pruning ---")
         # Start the algorithm with initial alpha (-inf) and beta (+inf).
-        alpha_beta_pruning(root, True, -math.inf, math.inf)
+        value,path=alpha_beta_pruning(root, True, -math.inf, math.inf)
 
         print(f"\nOptimal value at the root is: {root.minimax_value}")
+        print(f"The best path is: {' -> '.join(path)}")
         print("Displaying the pruned tree...")
         display_with_networkx(root)
